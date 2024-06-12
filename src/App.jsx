@@ -196,7 +196,153 @@
 
 
 // вариант по образцу https://www.material-react-table.com/docs/examples/editing-crud-inline-row#editing-crud-row-demo
+// import { useMemo, useState } from 'react';
+// import './App.css';
+
+// const fakeData = [
+//   { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', state: 'CA' },
+//   // more data here
+// ];
+// const usStates = ['CA', 'NY', 'TX', 'FL'];
+
+// const validateRequired = (value) => !!value.length;
+// const validateEmail = (email) =>
+//   !!email.length &&
+//   email
+//     .toLowerCase()
+//     .match(
+//       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+//     );
+
+// function validateUser(user) {
+//   return {
+//     firstName: !validateRequired(user.firstName)
+//       ? 'First Name is Required'
+//       : '',
+//     lastName: !validateRequired(user.lastName) ? 'Last Name is Required' : '',
+//     email: !validateEmail(user.email) ? 'Incorrect Email Format' : '',
+//   };
+// }
+
+// const Example = () => {
+//   const [users, setUsers] = useState(fakeData);
+//   const [validationErrors, setValidationErrors] = useState({});
+//   const [editingRow, setEditingRow] = useState(null);
+//   const [creatingRow, setCreatingRow] = useState(false);
+
+//   const columns = useMemo(() => [
+//     { accessorKey: 'id', header: 'Id', editable: false },
+//     { accessorKey: 'firstName', header: 'First Name' },
+//     { accessorKey: 'lastName', header: 'Last Name' },
+//     { accessorKey: 'email', header: 'Email' },
+//     { accessorKey: 'state', header: 'State' },
+//   ], []);
+
+//   const handleCreateUser = (newUser) => {
+//     const errors = validateUser(newUser);
+//     if (Object.values(errors).some(error => error)) {
+//       setValidationErrors(errors);
+//       return;
+//     }
+//     setValidationErrors({});
+//     setUsers([...users, { ...newUser, id: (Math.random() + 1).toString(36).substring(7) }]);
+//     setCreatingRow(false);
+//   };
+
+//   const handleSaveUser = (updatedUser) => {
+//     const errors = validateUser(updatedUser);
+//     if (Object.values(errors).some(error => error)) {
+//       setValidationErrors(errors);
+//       return;
+//     }
+//     setValidationErrors({});
+//     setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
+//     setEditingRow(null);
+//   };
+
+//   const handleDeleteUser = (userId) => {
+//     if (window.confirm('Are you sure you want to delete this user?')) {
+//       setUsers(users.filter(user => user.id !== userId));
+//     }
+//   };
+
+//   return (
+//     <div>
+//       <button onClick={() => setCreatingRow(true)}>Create New User</button>
+//       <table>
+//         <thead>
+//           <tr>
+//             {columns.map(column => (
+//               <th key={column.accessorKey}>{column.header}</th>
+//             ))}
+//             <th>Actions</th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {users.map(user => (
+//             <tr key={user.id}>
+//               {columns.map(column => (
+//                 <td key={column.accessorKey}>
+//                   {editingRow === user.id ? (
+//                     <input
+//                       type={column.accessorKey === 'email' ? 'email' : 'text'}
+//                       defaultValue={user[column.accessorKey]}
+//                       onBlur={(e) => handleSaveUser({ ...user, [column.accessorKey]: e.target.value })}
+//                     />
+//                   ) : (
+//                     user[column.accessorKey]
+//                   )}
+//                 </td>
+//               ))}
+//               <td>
+//                 {editingRow === user.id ? (
+//                   <button onClick={() => handleSaveUser(user)}>Save</button>
+//                 ) : (
+//                   <>
+//                     <button onClick={() => setEditingRow(user.id)}>Edit</button>
+//                     <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
+//                   </>
+//                 )}
+//               </td>
+//             </tr>
+//           ))}
+//           {creatingRow && (
+//             <tr>
+//               {columns.map(column => (
+//                 <td key={column.accessorKey}>
+//                   <input
+//                     type={column.accessorKey === 'email' ? 'email' : 'text'}
+//                     placeholder={column.header}
+//                     onBlur={(e) => setCreatingRow({ ...creatingRow, [column.accessorKey]: e.target.value })}
+//                   />
+//                 </td>
+//               ))}
+//               <td>
+//                 <button onClick={() => handleCreateUser(creatingRow)}>Add</button>
+//                 <button onClick={() => setCreatingRow(false)}>Cancel</button>
+//               </td>
+//             </tr>
+//           )}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+// };
+
+// export default Example;
+
+
+
+// код с dnd kit - но не работает редактирование и удаление, кнопки перебиваются эффектом 
 import { useMemo, useState } from 'react';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+  horizontalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { SortableItem, SortableHeaderItem } from './components/SortableComponents';
 import './App.css';
 
 const fakeData = [
@@ -211,7 +357,7 @@ const validateEmail = (email) =>
   email
     .toLowerCase()
     .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))$/,
     );
 
 function validateUser(user) {
@@ -224,19 +370,20 @@ function validateUser(user) {
   };
 }
 
+
+
 const Example = () => {
   const [users, setUsers] = useState(fakeData);
   const [validationErrors, setValidationErrors] = useState({});
   const [editingRow, setEditingRow] = useState(null);
   const [creatingRow, setCreatingRow] = useState(false);
-
-  const columns = useMemo(() => [
+  const [columns, setColumns] = useState([
     { accessorKey: 'id', header: 'Id', editable: false },
     { accessorKey: 'firstName', header: 'First Name' },
     { accessorKey: 'lastName', header: 'Last Name' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'state', header: 'State' },
-  ], []);
+  ]);
 
   const handleCreateUser = (newUser) => {
     const errors = validateUser(newUser);
@@ -266,65 +413,133 @@ const Example = () => {
     }
   };
 
+  const handleDragEnd = ({ active, over }) => {
+    if (active.id !== over.id) {
+      setUsers((items) => {
+        const oldIndex = items.findIndex(item => item.id === active.id);
+        const newIndex = items.findIndex(item => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const handleColumnDragEnd = ({ active, over }) => {
+    if (active.id !== over.id) {
+      setColumns((items) => {
+        const oldIndex = items.findIndex(item => item.accessorKey === active.id);
+        const newIndex = items.findIndex(item => item.accessorKey === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   return (
     <div>
       <button onClick={() => setCreatingRow(true)}>Create New User</button>
-      <table>
-        <thead>
-          <tr>
-            {columns.map(column => (
-              <th key={column.accessorKey}>{column.header}</th>
-            ))}
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(user => (
-            <tr key={user.id}>
-              {columns.map(column => (
-                <td key={column.accessorKey}>
-                  {editingRow === user.id ? (
-                    <input
-                      type={column.accessorKey === 'email' ? 'email' : 'text'}
-                      defaultValue={user[column.accessorKey]}
-                      onBlur={(e) => handleSaveUser({ ...user, [column.accessorKey]: e.target.value })}
-                    />
-                  ) : (
-                    user[column.accessorKey]
-                  )}
-                </td>
-              ))}
-              <td>
-                {editingRow === user.id ? (
-                  <button onClick={() => handleSaveUser(user)}>Save</button>
-                ) : (
-                  <>
-                    <button onClick={() => setEditingRow(user.id)}>Edit</button>
-                    <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
-                  </>
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleColumnDragEnd}>
+        <table>
+          <thead>
+            <SortableContext items={columns.map(column => column.accessorKey)} strategy={horizontalListSortingStrategy}>
+              <tr>
+                {columns.map(column => (
+                  <SortableHeaderItem key={column.accessorKey} id={column.accessorKey}>
+                    {column.header}
+                  </SortableHeaderItem>
+                ))}
+                <th>Actions</th>
+              </tr>
+            </SortableContext>
+          </thead>
+          <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={users.map(user => user.id)} strategy={verticalListSortingStrategy}>
+              <tbody>
+                {users.map(user => (
+                  <SortableItem key={user.id} id={user.id}>
+                    {columns.map(column => (
+                      <td key={column.accessorKey}>
+                        {editingRow === user.id ? (
+                          column.accessorKey === 'state' ? (
+                            <select
+                              defaultValue={user[column.accessorKey]}
+                              onBlur={(e) => handleSaveUser({ ...user, [column.accessorKey]: e.target.value })}
+                            >
+                              {usStates.map(state => (
+                                <option key={state} value={state}>{state}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type={column.accessorKey === 'email' ? 'email' : 'text'}
+                              defaultValue={user[column.accessorKey]}
+                              onBlur={(e) => handleSaveUser({ ...user, [column.accessorKey]: e.target.value })}
+                            />
+                          )
+                        ) : (
+                          user[column.accessorKey]
+                        )}
+                      </td>
+                    ))}
+                    <td>
+                      {editingRow === user.id ? (
+                        <button onClick={() => handleSaveUser(user)}>Save</button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setEditingRow(user.id);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              handleDeleteUser(user.id);
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </SortableItem>
+                ))}
+                {creatingRow && (
+                  <tr>
+                    {columns.map(column => (
+                      <td key={column.accessorKey}>
+                        {column.accessorKey === 'state' ? (
+                          <select
+                            onChange={(e) => setCreatingRow({ ...creatingRow, [column.accessorKey]: e.target.value })}
+                          >
+                            <option value="" disabled selected>Select State</option>
+                            {usStates.map(state => (
+                              <option key={state} value={state}>{state}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type={column.accessorKey === 'email' ? 'email' : 'text'}
+                            placeholder={column.header}
+                            onBlur={(e) => setCreatingRow({ ...creatingRow, [column.accessorKey]: e.target.value })}
+                          />
+                        )}
+                      </td>
+                    ))}
+                    <td>
+                      <button onClick={() => handleCreateUser(creatingRow)}>Add</button>
+                      <button onClick={() => setCreatingRow(false)}>Cancel</button>
+                    </td>
+                  </tr>
                 )}
-              </td>
-            </tr>
-          ))}
-          {creatingRow && (
-            <tr>
-              {columns.map(column => (
-                <td key={column.accessorKey}>
-                  <input
-                    type={column.accessorKey === 'email' ? 'email' : 'text'}
-                    placeholder={column.header}
-                    onBlur={(e) => setCreatingRow({ ...creatingRow, [column.accessorKey]: e.target.value })}
-                  />
-                </td>
-              ))}
-              <td>
-                <button onClick={() => handleCreateUser(creatingRow)}>Add</button>
-                <button onClick={() => setCreatingRow(false)}>Cancel</button>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+              </tbody>
+            </SortableContext>
+          </DndContext>
+        </table>
+      </DndContext>
     </div>
   );
 };
