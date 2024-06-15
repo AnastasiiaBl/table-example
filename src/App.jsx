@@ -191,10 +191,6 @@
 
 // export default App;
 
-
-
-
-
 // вариант по образцу https://www.material-react-table.com/docs/examples/editing-crud-inline-row#editing-crud-row-demo
 // import { useMemo, useState } from 'react';
 // import './App.css';
@@ -331,46 +327,48 @@
 
 // export default Example;
 
-
-
-// код с dnd kit - но не работает редактирование и удаление, кнопки перебиваются эффектом 
-import { useMemo, useState } from 'react';
-import { DndContext, closestCenter } from '@dnd-kit/core';
+// код с dnd kit 
+import { useMemo, useState } from "react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   verticalListSortingStrategy,
   horizontalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { SortableItem, SortableHeaderItem } from './components/SortableComponents';
-import './App.css';
+} from "@dnd-kit/sortable";
+import {
+  SortableItem,
+  SortableHeaderItem,
+} from "./components/SortableComponents";
+import "./App.css";
 
 const fakeData = [
-  { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', state: 'CA' },
+  {
+    id: "1",
+    firstName: "John",
+    lastName: "Doe",
+    email: "john@example.com",
+    state: "CA",
+  },
   // more data here
 ];
-const usStates = ['CA', 'NY', 'TX', 'FL'];
+const usStates = ["CA", "NY", "TX", "FL"];
 
 const validateRequired = (value) => !!value.length;
-const validateEmail = (email) =>
-  !!email.length &&
-  email
-    .toLowerCase()
-    .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))$/,
-    );
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
 
 function validateUser(user) {
   return {
     firstName: !validateRequired(user.firstName)
-      ? 'First Name is Required'
-      : '',
-    lastName: !validateRequired(user.lastName) ? 'Last Name is Required' : '',
-    email: !validateEmail(user.email) ? 'Incorrect Email Format' : '',
+      ? "First Name is Required"
+      : "",
+    lastName: !validateRequired(user.lastName) ? "Last Name is Required" : "",
+    email: !validateEmail(user.email) ? "Incorrect Email Format" : "",
   };
 }
-
-
 
 const Example = () => {
   const [users, setUsers] = useState(fakeData);
@@ -378,46 +376,72 @@ const Example = () => {
   const [editingRow, setEditingRow] = useState(null);
   const [creatingRow, setCreatingRow] = useState(false);
   const [columns, setColumns] = useState([
-    { accessorKey: 'id', header: 'Id', editable: false },
-    { accessorKey: 'firstName', header: 'First Name' },
-    { accessorKey: 'lastName', header: 'Last Name' },
-    { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'state', header: 'State' },
+    { accessorKey: "id", header: "Id", editable: false },
+    { accessorKey: "firstName", header: "First Name" },
+    { accessorKey: "lastName", header: "Last Name" },
+    { accessorKey: "email", header: "Email" },
+    { accessorKey: "state", header: "State" },
   ]);
+  const [editingData, setEditingData] = useState({});
 
   const handleCreateUser = (newUser) => {
     const errors = validateUser(newUser);
-    if (Object.values(errors).some(error => error)) {
+    if (Object.values(errors).some((error) => error)) {
       setValidationErrors(errors);
+      console.log(errors)
       return;
     }
     setValidationErrors({});
-    setUsers([...users, { ...newUser, id: (Math.random() + 1).toString(36).substring(7) }]);
+    setUsers([
+      ...users,
+      { ...newUser, id: (Math.random() + 1).toString(36).substring(7) },
+    ]);
     setCreatingRow(false);
   };
 
-  const handleSaveUser = (updatedUser) => {
-    const errors = validateUser(updatedUser);
-    if (Object.values(errors).some(error => error)) {
+  // const handleSaveUser = (updatedUser) => {
+  //   const errors = validateUser(updatedUser);
+  //   if (Object.values(errors).some((error) => error)) {
+  //     setValidationErrors(errors);
+  //     return;
+  //   }
+  //   setValidationErrors({});
+  //   setUsers(
+  //     users.map((user) => (user.id === updatedUser.id ? updatedUser : user))
+  //   );
+  //   console.log(users);
+  //   setEditingRow(null);
+  // };
+  const handleSaveUser = () => {
+    console.log("Attempting to save user:", editingData);
+    const errors = validateUser(editingData);
+    if (Object.values(errors).some((error) => error)) {
       setValidationErrors(errors);
       return;
     }
     setValidationErrors({});
-    setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
+    setUsers(
+      users.map((user) => (user.id === editingData.id ? editingData : user))
+    );
     setEditingRow(null);
+    setEditingData({});
+  };
+
+  const handleEditChange = (key, value) => {
+    setEditingData({ ...editingData, [key]: value });
   };
 
   const handleDeleteUser = (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(user => user.id !== userId));
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      setUsers(users.filter((user) => user.id !== userId));
     }
   };
 
   const handleDragEnd = ({ active, over }) => {
     if (active.id !== over.id) {
       setUsers((items) => {
-        const oldIndex = items.findIndex(item => item.id === active.id);
-        const newIndex = items.findIndex(item => item.id === over.id);
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
     }
@@ -426,8 +450,12 @@ const Example = () => {
   const handleColumnDragEnd = ({ active, over }) => {
     if (active.id !== over.id) {
       setColumns((items) => {
-        const oldIndex = items.findIndex(item => item.accessorKey === active.id);
-        const newIndex = items.findIndex(item => item.accessorKey === over.id);
+        const oldIndex = items.findIndex(
+          (item) => item.accessorKey === active.id
+        );
+        const newIndex = items.findIndex(
+          (item) => item.accessorKey === over.id
+        );
         return arrayMove(items, oldIndex, newIndex);
       });
     }
@@ -436,13 +464,22 @@ const Example = () => {
   return (
     <div>
       <button onClick={() => setCreatingRow(true)}>Create New User</button>
-      <DndContext collisionDetection={closestCenter} onDragEnd={handleColumnDragEnd}>
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragEnd={handleColumnDragEnd}
+      >
         <table>
           <thead>
-            <SortableContext items={columns.map(column => column.accessorKey)} strategy={horizontalListSortingStrategy}>
+            <SortableContext
+              items={columns.map((column) => column.accessorKey)}
+              strategy={horizontalListSortingStrategy}
+            >
               <tr>
-                {columns.map(column => (
-                  <SortableHeaderItem key={column.accessorKey} id={column.accessorKey}>
+                {columns.map((column) => (
+                  <SortableHeaderItem
+                    key={column.accessorKey}
+                    id={column.accessorKey}
+                  >
                     {column.header}
                   </SortableHeaderItem>
                 ))}
@@ -450,29 +487,66 @@ const Example = () => {
               </tr>
             </SortableContext>
           </thead>
-          <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={users.map(user => user.id)} strategy={verticalListSortingStrategy}>
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={users.map((user) => user.id)}
+              strategy={verticalListSortingStrategy}
+            >
               <tbody>
-                {users.map(user => (
+                {users.map((user) => (
                   <SortableItem key={user.id} id={user.id}>
-                    {columns.map(column => (
+                    {columns.map((column) => (
                       <td key={column.accessorKey}>
                         {editingRow === user.id ? (
-                          column.accessorKey === 'state' ? (
+                          column.accessorKey === "state" ? (
                             <select
                               defaultValue={user[column.accessorKey]}
-                              onBlur={(e) => handleSaveUser({ ...user, [column.accessorKey]: e.target.value })}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              // onChange={(e) =>
+                              //   handleSaveUser({
+                              //     ...user,
+                              //     [column.accessorKey]: e.target.value,
+                              //   })
+                              // }
+                              onChange={(e) =>
+                                handleEditChange(column.accessorKey, e.target.value)
+                              }
                             >
-                              {usStates.map(state => (
-                                <option key={state} value={state}>{state}</option>
+                              {usStates.map((state) => (
+                                <option key={state} value={state}>
+                                  {state}
+                                </option>
                               ))}
                             </select>
                           ) : (
+                            <div>
                             <input
-                              type={column.accessorKey === 'email' ? 'email' : 'text'}
+                              type={
+                                column.accessorKey === "email"
+                                  ? "email"
+                                  : "text"
+                              }
                               defaultValue={user[column.accessorKey]}
-                              onBlur={(e) => handleSaveUser({ ...user, [column.accessorKey]: e.target.value })}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              // onChange={(e) =>
+                              //   handleSaveUser({
+                              //     ...user,
+                              //     [column.accessorKey]: e.target.value,
+                              //   })
+                              // }
+                              onChange={(e) =>
+                                handleEditChange(column.accessorKey, e.target.value)
+                              }
                             />
+                            {validationErrors[column.accessorKey] && (
+                              <div className="error">
+                                {validationErrors[column.accessorKey]}
+                              </div>
+                            )}
+                            </div>
                           )
                         ) : (
                           user[column.accessorKey]
@@ -481,21 +555,35 @@ const Example = () => {
                     ))}
                     <td>
                       {editingRow === user.id ? (
-                        <button onClick={() => handleSaveUser(user)}>Save</button>
+                        <button
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleSaveUser(user);
+                          console.log(e);
+                          console.log(user);
+                        }}
+                        >
+                          Save
+                        </button>
                       ) : (
                         <>
                           <button
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
-                              e.stopPropagation();
                               e.preventDefault();
                               setEditingRow(user.id);
+                              setEditingData(user);
                             }}
                           >
                             Edit
                           </button>
                           <button
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
-                              e.stopPropagation();
                               e.preventDefault();
                               handleDeleteUser(user.id);
                             }}
@@ -509,29 +597,56 @@ const Example = () => {
                 ))}
                 {creatingRow && (
                   <tr>
-                    {columns.map(column => (
+                    {columns.map((column) => (
                       <td key={column.accessorKey}>
-                        {column.accessorKey === 'state' ? (
+                        {column.accessorKey === "state" ? (
                           <select
-                            onChange={(e) => setCreatingRow({ ...creatingRow, [column.accessorKey]: e.target.value })}
+                            onChange={(e) =>
+                              setCreatingRow({
+                                ...creatingRow,
+                                [column.accessorKey]: e.target.value,
+                              })
+                            }
                           >
-                            <option value="" disabled selected>Select State</option>
-                            {usStates.map(state => (
-                              <option key={state} value={state}>{state}</option>
+                            <option value="" disabled selected>
+                              Select State
+                            </option>
+                            {usStates.map((state) => (
+                              <option key={state} value={state}>
+                                {state}
+                              </option>
                             ))}
                           </select>
                         ) : (
+                          <>
                           <input
-                            type={column.accessorKey === 'email' ? 'email' : 'text'}
+                            type={
+                              column.accessorKey === "email" ? "email" : "text"
+                            }
                             placeholder={column.header}
-                            onBlur={(e) => setCreatingRow({ ...creatingRow, [column.accessorKey]: e.target.value })}
+                            onBlur={(e) =>
+                              setCreatingRow({
+                                ...creatingRow,
+                                [column.accessorKey]: e.target.value,
+                              })
+                            }
                           />
+                          {validationErrors[column.accessorKey] && (
+                            <div className="error">
+                              {validationErrors[column.accessorKey]}
+                            </div>
+                          )}
+                          </>
                         )}
                       </td>
                     ))}
                     <td>
-                      <button onClick={() => handleCreateUser(creatingRow)}>Add</button>
-                      <button onClick={() => setCreatingRow(false)}>Cancel</button>
+                      <button onClick={() => handleCreateUser(creatingRow)}>
+                        Add
+                      </button>
+                      <button onClick={() => setCreatingRow(false)}>
+                        Cancel
+                      </button>
                     </td>
                   </tr>
                 )}

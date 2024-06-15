@@ -127,3 +127,9 @@ button:disabled {
 button:last-child {
   background-color: #dc3545;
 }
+
+.error {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}
