@@ -328,7 +328,7 @@
 // export default Example;
 
 // код с dnd kit 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -341,6 +341,7 @@ import {
   SortableHeaderItem,
 } from "./components/SortableComponents";
 import "./App.css";
+import AddNewColumn from "./components/AddNewColumn";
 
 const fakeData = [
   {
@@ -353,36 +354,36 @@ const fakeData = [
   // more data here
 ];
 const usStates = ["CA", "NY", "TX", "FL"];
-
-const validateRequired = (value) => !!value.length;
-const validateEmail = (email) => {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
+const validateUser = (user) => {
+  const errors = {};
+  if (!user.firstName || !user.firstName.length) {
+    errors.firstName = "First Name is Required";
+  }
+  if (!user.lastName || !user.lastName.length) {
+    errors.lastName = "Last Name is Required";
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(user.email)) {
+    errors.email = "Incorrect Email Format";
+  }
+  return errors;
 };
 
-function validateUser(user) {
-  return {
-    firstName: !validateRequired(user.firstName)
-      ? "First Name is Required"
-      : "",
-    lastName: !validateRequired(user.lastName) ? "Last Name is Required" : "",
-    email: !validateEmail(user.email) ? "Incorrect Email Format" : "",
-  };
-}
 
-const Example = () => {
+const Table = () => {
   const [users, setUsers] = useState(fakeData);
   const [validationErrors, setValidationErrors] = useState({});
   const [editingRow, setEditingRow] = useState(null);
   const [creatingRow, setCreatingRow] = useState(false);
   const [columns, setColumns] = useState([
-    { accessorKey: "id", header: "Id", editable: false },
-    { accessorKey: "firstName", header: "First Name" },
-    { accessorKey: "lastName", header: "Last Name" },
-    { accessorKey: "email", header: "Email" },
-    { accessorKey: "state", header: "State" },
+    { accessorKey: "id", header: "Id", editable: false, type: "text" },
+    { accessorKey: "firstName", header: "First Name", type: "text" },
+    { accessorKey: "lastName", header: "Last Name", type: "text" },
+    { accessorKey: "email", header: "Email", type: "email" },
+    { accessorKey: "state", header: "State", type: "select" },
   ]);
   const [editingData, setEditingData] = useState({});
+  const [addingColumn, setAddingColumn] = useState(false);
 
   const handleCreateUser = (newUser) => {
     const errors = validateUser(newUser);
@@ -461,9 +462,24 @@ const Example = () => {
     }
   };
 
+  const handleAddColumn = (values) => {
+    setColumns([
+      ...columns,
+      { accessorKey: values.name, header: values.name, type: values.type },
+    ]);
+    setAddingColumn(false);
+  };
+
   return (
     <div>
       <button onClick={() => setCreatingRow(true)}>Create New User</button>
+      <button onClick={() => setAddingColumn(true)}>Add Column</button>
+      {addingColumn && (
+        <AddNewColumn
+          onSubmit={handleAddColumn}
+          onCancel={() => setAddingColumn(false)}
+        />
+      )}
       <DndContext
         collisionDetection={closestCenter}
         onDragEnd={handleColumnDragEnd}
@@ -501,7 +517,8 @@ const Example = () => {
                     {columns.map((column) => (
                       <td key={column.accessorKey}>
                         {editingRow === user.id ? (
-                          column.accessorKey === "state" ? (
+                          column.type === "select" ? (
+                            <div>
                             <select
                               defaultValue={user[column.accessorKey]}
                               onPointerDown={(e) => e.stopPropagation()}
@@ -521,6 +538,12 @@ const Example = () => {
                                 </option>
                               ))}
                             </select>
+                            {validationErrors[column.accessorKey] && (
+                                <div className="error">
+                                  {validationErrors[column.accessorKey]}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <div>
                             <input
@@ -659,4 +682,4 @@ const Example = () => {
   );
 };
 
-export default Example;
+export default Table;
