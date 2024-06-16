@@ -512,6 +512,61 @@ const Table = () => {
               strategy={verticalListSortingStrategy}
             >
               <tbody>
+              {creatingRow && (
+                  <tr>
+                    {columns.map((column) => (
+                      <td key={column.accessorKey}>
+                        {column.accessorKey === "state" ? (
+                          <select
+                            onChange={(e) =>
+                              setCreatingRow({
+                                ...creatingRow,
+                                [column.accessorKey]: e.target.value,
+                              })
+                            }
+                          >
+                            <option value="" disabled selected>
+                              Select State
+                            </option>
+                            {usStates.map((state) => (
+                              <option key={state} value={state}>
+                                {state}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <>
+                          <input
+                            type={
+                              column.accessorKey === "email" ? "email" : "text"
+                            }
+                            placeholder={column.header}
+                            onBlur={(e) =>
+                              setCreatingRow({
+                                ...creatingRow,
+                                [column.accessorKey]: e.target.value,
+                              })
+                            }
+                          />
+                          {validationErrors[column.accessorKey] && (
+                            <div className="error">
+                              {validationErrors[column.accessorKey]}
+                            </div>
+                          )}
+                          </>
+                        )}
+                      </td>
+                    ))}
+                    <td>
+                      <button onClick={() => handleCreateUser(creatingRow)}>
+                        Add
+                      </button>
+                      <button onClick={() => setCreatingRow(false)}>
+                        Cancel
+                      </button>
+                    </td>
+                  </tr>
+                )}
                 {users.map((user) => (
                   <SortableItem key={user.id} id={user.id}>
                     {columns.map((column) => (
@@ -618,61 +673,6 @@ const Table = () => {
                     </td>
                   </SortableItem>
                 ))}
-                {creatingRow && (
-                  <tr>
-                    {columns.map((column) => (
-                      <td key={column.accessorKey}>
-                        {column.accessorKey === "state" ? (
-                          <select
-                            onChange={(e) =>
-                              setCreatingRow({
-                                ...creatingRow,
-                                [column.accessorKey]: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="" disabled selected>
-                              Select State
-                            </option>
-                            {usStates.map((state) => (
-                              <option key={state} value={state}>
-                                {state}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <>
-                          <input
-                            type={
-                              column.accessorKey === "email" ? "email" : "text"
-                            }
-                            placeholder={column.header}
-                            onBlur={(e) =>
-                              setCreatingRow({
-                                ...creatingRow,
-                                [column.accessorKey]: e.target.value,
-                              })
-                            }
-                          />
-                          {validationErrors[column.accessorKey] && (
-                            <div className="error">
-                              {validationErrors[column.accessorKey]}
-                            </div>
-                          )}
-                          </>
-                        )}
-                      </td>
-                    ))}
-                    <td>
-                      <button onClick={() => handleCreateUser(creatingRow)}>
-                        Add
-                      </button>
-                      <button onClick={() => setCreatingRow(false)}>
-                        Cancel
-                      </button>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </SortableContext>
           </DndContext>
